@@ -18,6 +18,8 @@ import alluxio.conf.AlluxioConfiguration;
 import alluxio.conf.PropertyKey;
 
 import com.google.common.hash.BloomFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,6 +32,8 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
  * This class is a shadow cache with multiple bloom filter implementation.
  */
 public class MultipleBloomShadowCacheManager implements ShadowCacheManager {
+  private static final Logger LOG = LoggerFactory.getLogger(MultipleBloomShadowCacheManager.class);
+
   private final int mNumBloomFilter;
   private final long mBloomFilterExpectedInsertions;
   // An array of bloom filters, and each capture a segment of window
@@ -75,6 +79,7 @@ public class MultipleBloomShadowCacheManager implements ShadowCacheManager {
         mBloomFilterExpectedInsertions);
     mScheduler.scheduleAtFixedRate(this::switchBloomFilter, 0, windowMs / mNumBloomFilter,
         MILLISECONDS);
+    LOG.info(String.format("NumBloomFilter %d", mNumBloomFilter));
   }
 
   @Override

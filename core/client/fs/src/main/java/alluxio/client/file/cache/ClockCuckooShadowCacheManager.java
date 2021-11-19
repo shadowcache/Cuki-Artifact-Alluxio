@@ -21,6 +21,9 @@ import alluxio.client.quota.CacheScope;
 import alluxio.conf.AlluxioConfiguration;
 import alluxio.conf.PropertyKey;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
@@ -29,6 +32,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * This class is a shadow cache with {@link ClockCuckooFilter} implementation.
  */
 public class ClockCuckooShadowCacheManager implements ShadowCacheManager {
+  private static final Logger LOG = LoggerFactory.getLogger(ClockCuckooShadowCacheManager.class);
+
   private static final int BITS_PER_TAG = 8;
 
   private final ScheduledExecutorService mScheduler = Executors.newScheduledThreadPool(0);
@@ -60,6 +65,8 @@ public class ClockCuckooShadowCacheManager implements ShadowCacheManager {
         windowMs);
     long agingPeriod = windowMs >> bitsPerClock;
     mScheduler.scheduleAtFixedRate(this::aging, agingPeriod, agingPeriod, MILLISECONDS);
+    LOG.info(String.format("bitsPerClock %d, bitsPerScope %d, bitsPerSize %d", bitsPerClock,
+        bitsPerScope, bitsPerSize));
   }
 
   @Override
