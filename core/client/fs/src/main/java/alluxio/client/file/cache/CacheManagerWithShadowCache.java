@@ -53,9 +53,11 @@ public class CacheManagerWithShadowCache implements CacheManager {
     if (nread > 0) {
       Metrics.SHADOW_CACHE_PAGES_HIT.inc();
       Metrics.SHADOW_CACHE_BYTES_HIT.inc(nread);
-    } else {
-      updateShadowCache(pageId, bytesToRead, cacheContext);
     }
+//    else {
+      // no-op: only put will update shadow cache
+//      updateShadowCache(pageId, bytesToRead, cacheContext);
+//    }
     Metrics.SHADOW_CACHE_PAGES_READ.inc();
     Metrics.SHADOW_CACHE_BYTES_READ.inc(bytesToRead);
     return mCacheManager.get(pageId, pageOffset, bytesToRead, buffer, offsetInBuffer, cacheContext);

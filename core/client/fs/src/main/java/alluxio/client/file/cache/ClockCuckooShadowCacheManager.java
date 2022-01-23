@@ -11,22 +11,21 @@
 
 package alluxio.client.file.cache;
 
-import static alluxio.client.file.cache.cuckoofilter.ConcurrentClockCuckooFilter.DEFAULT_LOAD_FACTOR;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
 import alluxio.client.file.cache.cuckoofilter.ClockCuckooFilter;
 import alluxio.client.file.cache.cuckoofilter.ConcurrentClockCuckooFilter;
 import alluxio.client.file.cache.cuckoofilter.SlidingWindowType;
 import alluxio.client.quota.CacheScope;
 import alluxio.conf.AlluxioConfiguration;
 import alluxio.conf.PropertyKey;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static alluxio.client.file.cache.cuckoofilter.ConcurrentClockCuckooFilter.DEFAULT_LOAD_FACTOR;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * This class is a shadow cache with {@link ClockCuckooFilter} implementation.
@@ -65,7 +64,7 @@ public class ClockCuckooShadowCacheManager implements ShadowCacheManager {
         windowMs);
     long agingPeriod = windowMs >> bitsPerClock;
     mScheduler.scheduleAtFixedRate(this::aging, agingPeriod, agingPeriod, MILLISECONDS);
-    LOG.info(String.format("bitsPerClock %d, bitsPerScope %d, bitsPerSize %d", bitsPerClock,
+    LOG.info(String.format("version 2bitsPerClock %d, bitsPerScope %d, bitsPerSize %d", bitsPerClock,
         bitsPerScope, bitsPerSize));
   }
 
