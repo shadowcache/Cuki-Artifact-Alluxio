@@ -92,6 +92,8 @@ public class LocalCacheManager implements CacheManager {
   private final boolean mQuotaEnabled;
   /** State of this cache. */
   private final AtomicReference<CacheManager.State> mState = new AtomicReference<>();
+  /** cache adaption */
+  private final boolean mAdaptCache;
 
   /**
    * @param conf the Alluxio configuration
@@ -164,6 +166,7 @@ public class LocalCacheManager implements CacheManager {
     Metrics.registerGauges(this, mMetaStore);
     mState.set(READ_ONLY);
     Metrics.STATE.inc();
+    mAdaptCache = conf.getBoolean(PropertyKey.USER_CLIENT_CACHE_ADAPTION_ENABLED);
   }
 
   /**
@@ -525,8 +528,10 @@ public class LocalCacheManager implements CacheManager {
 
   @Override
   public void setCacheSize(long newCacheSize) {
-    LOG.info("Set cache size, before {}, new {}", mCacheSize, newCacheSize);
-    mCacheSize = newCacheSize;
+    if (mAdaptCache) {
+      LOG.info("Set cache size, before {}, new {}", mCacheSize, newCacheSize);
+      mCacheSize = newCacheSize;
+    }
   }
 
   /**

@@ -21,7 +21,6 @@ import alluxio.grpc.Scope;
 import alluxio.grpc.WritePType;
 import alluxio.util.OSUtils;
 import alluxio.util.io.PathUtils;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
@@ -34,6 +33,8 @@ import com.sun.management.OperatingSystemMXBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.ThreadSafe;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,9 +44,6 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * Configuration property keys. This class provides a set of pre-defined property keys.
@@ -4138,6 +4136,13 @@ public final class PropertyKey implements Comparable<PropertyKey> {
           .setConsistencyCheckLevel(ConsistencyCheckLevel.IGNORE)
           .setScope(Scope.CLIENT)
           .build();
+  public static final PropertyKey USER_CLIENT_CACHE_ADAPTION_ENABLED =
+          new Builder(Name.USER_CLIENT_CACHE_ADAPTION_ENABLED).setDefaultValue(false)
+                  .setDescription(
+                          "Whether to enable cache size adaption.")
+                  .setConsistencyCheckLevel(ConsistencyCheckLevel.WARN)
+                  .setScope(Scope.CLIENT)
+                  .build();
   public static final PropertyKey USER_CLIENT_CACHE_DIR =
       new Builder(Name.USER_CLIENT_CACHE_DIR)
           .setDefaultValue("/tmp/alluxio_cache")
@@ -6167,6 +6172,8 @@ public final class PropertyKey implements Comparable<PropertyKey> {
             "alluxio.user.client.cache.shadow.cuckoo.size.bits";
     public static final String USER_CLIENT_CACHE_SHADOW_CUCKOO_SCOPE_BITS =
             "alluxio.user.client.cache.shadow.cuckoo.scope.bits";
+    public static final String USER_CLIENT_CACHE_ADAPTION_ENABLED =
+            "alluxio.user.client.cache.adaption.enabled";
     public static final String USER_CLIENT_CACHE_DIR =
         "alluxio.user.client.cache.dir";
     public static final String USER_CLIENT_CACHE_LOCAL_STORE_FILE_BUCKETS =
