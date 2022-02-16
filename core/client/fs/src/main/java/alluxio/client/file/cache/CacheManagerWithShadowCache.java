@@ -21,11 +21,15 @@ import com.codahale.metrics.Counter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A wrapper class of CacheManager with shadow cache.
  */
 public class CacheManagerWithShadowCache implements CacheManager {
+  private static final Logger LOG = LoggerFactory.getLogger(CacheManagerWithShadowCache.class);
+
   private final CacheManager mCacheManager;
   private final ShadowCacheManager mShadowCacheManager;
   private long mShadowCachePages = 0;
@@ -43,7 +47,18 @@ public class CacheManagerWithShadowCache implements CacheManager {
   @Override
   public boolean put(PageId pageId, byte[] page, CacheContext cacheContext) {
     updateShadowCache(pageId, page.length, cacheContext);
+    // Cache adaption: tune cache size before putting item
+    // increase cache size is ok, but decreasing cache size ?
+    tuneCacheSize();
     return mCacheManager.put(pageId, page, cacheContext);
+  }
+
+  private void tuneCacheSize() {
+    long targetCacheSize = (long) Math.ulp(mShadowCacheBytes * 1.06);
+    LOG.info("working set size {}, target cache size {}", mShadowCacheBytes, targetCacheSize);
+    if (targetCacheSize != mCacheManager.getCacheSize()) {
+      mCacheManager.setCacheSize(targetCacheSize);
+    }
   }
 
   @Override

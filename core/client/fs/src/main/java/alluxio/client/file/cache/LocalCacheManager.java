@@ -11,10 +11,6 @@
 
 package alluxio.client.file.cache;
 
-import static alluxio.client.file.cache.CacheManager.State.NOT_IN_USE;
-import static alluxio.client.file.cache.CacheManager.State.READ_ONLY;
-import static alluxio.client.file.cache.CacheManager.State.READ_WRITE;
-
 import alluxio.client.file.CacheContext;
 import alluxio.client.file.cache.store.PageStoreOptions;
 import alluxio.client.quota.CacheQuota;
@@ -28,7 +24,6 @@ import alluxio.exception.status.ResourceExhaustedException;
 import alluxio.metrics.MetricKey;
 import alluxio.metrics.MetricsSystem;
 import alluxio.resource.LockResource;
-
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
@@ -37,25 +32,21 @@ import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.GuardedBy;
+import javax.annotation.concurrent.ThreadSafe;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.GuardedBy;
-import javax.annotation.concurrent.ThreadSafe;
+import static alluxio.client.file.cache.CacheManager.State.*;
 
 /**
  * A class to manage & serve cached pages. This class coordinates various components to respond for
@@ -82,7 +73,7 @@ public class LocalCacheManager implements CacheManager {
 
   private static final int LOCK_SIZE = 1024;
   private final long mPageSize;
-  private final long mCacheSize;
+  private long mCacheSize;
   private final int mMaxEvictionRetries;
   private final boolean mAsyncWrite;
   private final boolean mAsyncRestore;
@@ -525,6 +516,17 @@ public class LocalCacheManager implements CacheManager {
   @Override
   public State state() {
     return mState.get();
+  }
+
+  @Override
+  public long getCacheSize() {
+    return mCacheSize;
+  }
+
+  @Override
+  public void setCacheSize(long newCacheSize) {
+    LOG.info("Set cache size, before {}, new {}", mCacheSize, newCacheSize);
+    mCacheSize = newCacheSize;
   }
 
   /**

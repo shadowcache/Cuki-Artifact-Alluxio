@@ -17,18 +17,16 @@ import alluxio.conf.PropertyKey;
 import alluxio.metrics.MetricKey;
 import alluxio.metrics.MetricsSystem;
 import alluxio.resource.LockResource;
-
 import com.codahale.metrics.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.GuardedBy;
 
 /**
  * Interface for managing cached pages.
@@ -218,4 +216,18 @@ public interface CacheManager extends AutoCloseable {
    * @return state of this cache
    */
   State state();
+
+  /**
+   * @return the cache size
+   */
+  default long getCacheSize() {
+    return 0L;
+  }
+
+  /**
+   * @param newCacheSize new cache size to set
+   */
+  default void setCacheSize(long newCacheSize) {
+    // no-op
+  }
 }
