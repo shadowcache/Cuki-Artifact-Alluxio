@@ -161,7 +161,7 @@ public class LocalCacheManager implements CacheManager {
             : null;
     mInitService = mAsyncRestore ? Executors.newSingleThreadExecutor() : null;
     mQuotaEnabled = conf.getBoolean(PropertyKey.USER_CLIENT_CACHE_QUOTA_ENABLED);
-    Metrics.registerGauges(mCacheSize, mMetaStore);
+    Metrics.registerGauges(this, mMetaStore);
     mState.set(READ_ONLY);
     Metrics.STATE.inc();
   }
@@ -718,10 +718,10 @@ public class LocalCacheManager implements CacheManager {
     private static final Counter STATE =
         MetricsSystem.counter(MetricKey.CLIENT_CACHE_STATE.getName());
 
-    private static void registerGauges(long cacheSize, MetaStore metaStore) {
+    private static void registerGauges(CacheManager cacheManager, MetaStore metaStore) {
       MetricsSystem.registerGaugeIfAbsent(
           MetricsSystem.getMetricName(MetricKey.CLIENT_CACHE_SPACE_AVAILABLE.getName()),
-          () -> cacheSize - metaStore.bytes());
+          () -> cacheManager.getCacheSize() - metaStore.bytes());
       MetricsSystem.registerGaugeIfAbsent(
           MetricsSystem.getMetricName(MetricKey.CLIENT_CACHE_SPACE_USED.getName()),
           metaStore::bytes);
