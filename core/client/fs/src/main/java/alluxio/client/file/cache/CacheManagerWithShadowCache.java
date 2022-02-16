@@ -54,7 +54,7 @@ public class CacheManagerWithShadowCache implements CacheManager {
   }
 
   private void tuneCacheSize() {
-    long targetCacheSize = (long) Math.ulp(mShadowCacheBytes * 1.06);
+    long targetCacheSize = (long) Math.ceil(mShadowCacheBytes * 1.06);
     LOG.info("working set size {}, target cache size {}", mShadowCacheBytes, targetCacheSize);
     if (targetCacheSize != mCacheManager.getCacheSize()) {
       mCacheManager.setCacheSize(targetCacheSize);
