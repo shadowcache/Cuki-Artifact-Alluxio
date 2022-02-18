@@ -65,6 +65,12 @@ public class CacheManagerWithShadowCache implements CacheManager {
   public int get(PageId pageId, int pageOffset, int bytesToRead, byte[] buffer, int offsetInBuffer,
       CacheContext cacheContext) {
     int nread = mShadowCacheManager.get(pageId, bytesToRead, getCacheScope(cacheContext));
+    int nread2 = mCacheManager.get(pageId, pageOffset, bytesToRead, buffer, offsetInBuffer, cacheContext);
+    // Workaround for shadow cache evicting stale items which are still in real cache
+    if (nread == 0 && nread2 > 0) {
+      updateShadowCache(pageId, bytesToRead, cacheContext);
+      nread = mShadowCacheManager.get(pageId, bytesToRead, getCacheScope(cacheContext));
+    }
     if (nread > 0) {
       Metrics.SHADOW_CACHE_PAGES_HIT.inc();
       Metrics.SHADOW_CACHE_BYTES_HIT.inc(nread);
@@ -75,7 +81,7 @@ public class CacheManagerWithShadowCache implements CacheManager {
 //    }
     Metrics.SHADOW_CACHE_PAGES_READ.inc();
     Metrics.SHADOW_CACHE_BYTES_READ.inc(bytesToRead);
-    return mCacheManager.get(pageId, pageOffset, bytesToRead, buffer, offsetInBuffer, cacheContext);
+    return nread2;
   }
 
   /**
