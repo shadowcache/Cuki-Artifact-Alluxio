@@ -1,143 +1,170 @@
-[![logo](docs/resources/alluxio_logo.png "Alluxio")](https://www.alluxio.io)
+# Adaptive Online Cache Capacity Optimization via Lightweight Working Set Size Estimation at Scale
 
-[![Slack](https://img.shields.io/badge/slack-alluxio--community-blue.svg?logo=slack)](https://www.alluxio.io/slack)
-[![Release](https://img.shields.io/github/release/alluxio/alluxio/all.svg)](https://www.alluxio.io/download)
-[![Docker Pulls](https://img.shields.io/docker/pulls/alluxio/alluxio.svg)](https://hub.docker.com/r/alluxio/alluxio)
-[![Documentation](https://img.shields.io/badge/docs-reference-blue.svg)](https://www.alluxio.io/docs)
-[![Twitter Follow](https://img.shields.io/twitter/follow/alluxio.svg?label=Follow&style=social)](https://twitter.com/intent/follow?screen_name=alluxio)
-[![License](https://img.shields.io/github/license/alluxio/alluxio.svg)](https://github.com/Alluxio/alluxio/blob/master/LICENSE)
+This is the repository for the artifact evaluation of Cuki. Cuki is described in the ATC'23 paper "Adaptive Online Cache Capacity Optimization via Lightweight Working Set Size Estimation at Scale".
 
-## What is Alluxio
-[Alluxio](https://www.alluxio.io) (formerly known as Tachyon)
-is a virtual distributed storage system. It bridges the gap between
-computation frameworks and storage systems, enabling computation applications to connect to
-numerous storage systems through a common interface. Read more about
-[Alluxio Overview](https://docs.alluxio.io/os/user/stable/en/Overview.html).
+Cuki proposes an approximate data structure for efficiently estimating online WSS and IRR for variable-size item access with proven accuracy guarantee. Our solution is cache-friendly, thread-safe, and light-weighted in design. Based on that, we design an adaptive online cache capacity tuning mechanism.
 
-The Alluxio project originated from a research project called Tachyon at AMPLab, UC Berkeley,
-which was the data layer of the Berkeley Data Analytics Stack ([BDAS](https://amplab.cs.berkeley.edu/bdas/)).
-For more details, please refer to Haoyuan Li's PhD dissertation
-[Alluxio: A Virtual Distributed File System](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2018/EECS-2018-29.html).
+The whole artifact is departed into three parts:
+- wss estimation: https://github.com/shadowcache/Cuki-Artifact-WSS-Estimation
+- query engine application: https://github.com/shadowcache/Cuki-Artifact-Presto
+- cache system: https://github.com/shadowcache/Cuki-Artifact-Alluxio
 
-## Who Uses Alluxio
+## Experimental Environment
+Cuki is implemented on Alluxio, which is compiled using Maven and run with Java. It also relies on Presto and Hive to function properly.
 
-Alluxio is used in production to manage Petabytes of data in many leading companies, with
-the largest deployment exceeding 3,000 nodes. You can find more use cases at
-[Powered by Alluxio](https://www.alluxio.io/powered-by-alluxio) or visit our first community conference ([Data Orchestration Summit](https://www.alluxio.io/data-orchestration-summit-2019/)) to learn from other community members!
+To save you the trouble of setting up all these components, we provide two ways to get a pre-prepared environment. You can SSH into our pre-prepared machine in the AWS Cloud or deploy the environment yourself.
 
-## Who Owns and Manages Alluxio Project
+### Remote Machine via SSH
+We provide an AWS EC2 server and have all the dependencies well-prepared.
 
-Alluxio Open Source Foundation is the owner of Alluxio project.
-Project operation is done by Alluxio Project Management Committee (PMC).
-You can checkout more details in its structure and how to join Alluxio PMC 
-[here](https://github.com/Alluxio/alluxio/wiki/Alluxio-Project-Management-Committee-(PMC)).
+You can contact us to get access to the machine (ip address and password etc.) anytime during the artifact evaluation process. After that, you can log in via ssh:
 
-## Community and Events
-Please use the following to reach members of the community:
+> ssh -p {password} atc23@host
 
-* [Alluxio Community Slack Channel](https://www.alluxio.io/slack): post your questions here if you seek for help for general questions or issues using Alluxio.
-* [Special Interest Groups (SIG) for Alluxio users and developers](#contributing)
-* Community Events: [upcoming online office hours, meetups and webinars](https://www.alluxio.io/events)
-* Meetup Groups: [Global Online Meetup](https://www.meetup.com/Alluxio-Global-Online-Meetup/), [Bay Area Meetup](http://www.meetup.com/Alluxio),
-[New York Meetup](https://www.meetup.com/Alluxio-Open-Source-New-York-Meetup),
-[Beijing Alluxio Meetup](https://www.meetup.com/meetup-group-iLMBZGhS/), [Austin Meetup](https://www.meetup.com/Cloud-Data-Orchestration-Austin/)
-* [Alluxio Twitter](https://twitter.com/alluxio); [Alluxio Youtube Channel](https://www.youtube.com/channel/UCpibQsajhwqYPLYhke4RigA); [Alluxio Mailing List](https://groups.google.com/forum/?fromgroups#!forum/alluxio-users)
-
-## Download Alluxio
-
-### Binary download
-
-Prebuilt binaries are available to download at https://www.alluxio.io/download .
-
-### Docker
-
-Download and start an Alluxio master and a worker. More details can be found in [documentation](https://docs.alluxio.io/os/user/stable/en/deploy/Running-Alluxio-On-Docker.html).
-
-```console
-# Create a network for connecting Alluxio containers
-$ docker network create alluxio_nw
-# Create a volume for storing ufs data
-$ docker volume create ufs
-# Launch the Alluxio master
-$ docker run -d --net=alluxio_nw \
-    -p 19999:19999 \
-    --name=alluxio-master \
-    -v ufs:/opt/alluxio/underFSStorage \
-    alluxio/alluxio master
-# Launch the Alluxio worker
-$ export ALLUXIO_WORKER_RAMDISK_SIZE=1G
-$ docker run -d --net=alluxio_nw \
-    --shm-size=${ALLUXIO_WORKER_RAMDISK_SIZE} \
-    --name=alluxio-worker \
-    -v ufs:/opt/alluxio/underFSStorage \
-    -e ALLUXIO_JAVA_OPTS="-Dalluxio.worker.ramdisk.size=${ALLUXIO_WORKER_RAMDISK_SIZE} -Dalluxio.master.hostname=alluxio-master" \
-    alluxio/alluxio worker
+The home directory contains the following files:
+```
+├─ download                 # dependencies
+    ├── apache-hive-3.1.3-bin 
+    ├── apache-maven-3.5.4
+    ├── aws
+    ├── hadoop-3.3.1
+    ├── jdk1.8.0_151
+    ├── jmx_prometheus
+    ├── mysql-connector-jar-8.0.30
+    ├── prometheus-2.37.0.linux-amd64
+├─ alluxio                  # the cache system with cuki
+├─ presto_cuki              # the query system with alluxio
+├─ presto-data              # presto data directory
+├─ wss-estimation           # the wss estimation of cuki
 ```
 
-### MacOS Homebrew
+### Deploy your own environment
+Dependencies are:
+- hive 3.1.3
+- maven 3.5.4
+- hadoop 3.3.1
+- java 8
+- prometheus
+- mysql 8.0.3
+- S3
 
-```console
-$ brew install alluxio
+
+First, you need to deploy hive with its metastore in hdfs and mysql. The TPC-DS data should be located in S3. Then compile the alluxio provided by us:
+```cmd
+cd alluxio
+mvn clean install -Dmaven.javadoc.skip=true -DskipTests -Dlicense.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -Prelease
 ```
 
-## Quick Start
+Then, you can build the presto by:
+```cmd
+cd presto_cuki
+mvn -N io.takari:maven:wrapper
+mvnw clean install -T2C -DskipTests -Dlicense.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -pl '!presto-docs'
+``` 
 
-Please follow the [Guide to Get Started](https://docs.alluxio.io/os/user/stable/en/Getting-Started.html)
-to run a simple example with Alluxio.
+The wss-estimation of the paper can be compiled by:
+```cmd
+cd wss-estimation
+mvn assembly:assembly \
+  -T 4C \
+  -Dmaven.javadoc.skip=true \
+  -DskipTests \
+  -Dlicense.skip=true \
+  -Dcheckstyle.skip=true \
+  -Dfindbugs.skip=true
+```
 
-## Report a Bug
+##  Steps for Evaluating Cuki
+We have automated most of the integration and launching operations of our artifact. You can refer to the script files in wss-estimation and presto_cuki.
 
-To report bugs, suggest improvements, or create new feature requests, please open a [Github Issue](https://github.com/alluxio/alluxio/issues).
-If you are not sure whether you run into bugs or simply have general questions with respect to Alluxio, post your questions on [Alluxio Slack channel](www.alluxio.io/slack).
+### Evaluate the accuracy of wss-estimation
+1. build the wss-estimation repo:
+```
+cd wss-estimation
+mvn assembly:assembly \
+  -T 4C \
+  -Dmaven.javadoc.skip=true \
+  -DskipTests \
+  -Dlicense.skip=true \
+  -Dcheckstyle.skip=true \
+  -Dfindbugs.skip=true
+```
+3. Run the `.sh` files, note that msr_ccf_mem should run twice with different `OPPO_AGING` parameters (true|false), the cmd will output the result file path.:
+```
+cd wss-estimation
+bash ./bin/accuracy/msr_ccf_mem.sh
+bash ./bin/accuracy/msr_bmc_mem.sh
+bash ./bin/accuracy/msr_mbf_mem.sh
+bash ./bin/accuracy/msr_ss_mem.sh
+bash ./bin/accuracy/msr_swamp_mem.sh
+```
+5. After all methods get evaluated, run the following command to get your figure! The output figure path will displayed in the cmd:
+```
+python3 ./plot/plot_msr_accuracy.py
+```
 
-## Depend on Alluxio
+### Evaluate the cache hit rate
 
-Alluxio project provides several different client artifacts for external projects to depend on Alluxio client:
+1. Build alluxio
+```cmd
+cd alluxio
+mvn clean install -Dmaven.javadoc.skip=true -DskipTests -Dlicense.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -Prelease
+```
+2. Build presto
+```cmd
+cd presto_cuki
+mvn -N io.takari:maven:wrapper
+mvnw clean install -T2C -DskipTests -Dlicense.skip=true -Dcheckstyle.skip=true -Dfindbugs.skip=true -pl '!presto-docs'
+```
+3. check whether the hdfs is running by `jps`, if it is running, there will be namenode and datanode, else run the hdfs:
+```cmd
+cd download/hadoop-3.3.1
+bash ./sbin/start-dfs.sh
+```
+4. Run hive metastore
+```cmd
+hive --service metastore
+```
+5. Run prometheus
+```cmd
+cd download/prometheus-2.37.0.linux-amd64
+./prometheus --config.file=cuki.yml
+```
+6. Run Presto evaluate the cache hit rate, open the presto website page at port 8080, you should see it is working:
+```cmd
+cd presto_cuki
+bash ./benchmarks/tpcds_s3.sh 
+```
+7. Run the bash to auto collect exp data and get your figure
+```cmd
+cd presto_cuki
+python3 ./benchmarks/get_metrics.py
+python3 ./benchmarks/plot.py
+```
 
-- Artifact `alluxio-shaded-client` is recommended generally for a project to use Alluxio client.
-  The jar of this artifact is self-contained (including all dependencies in a shaded form to prevent dependency conflicts),
-  and thus larger than the following two artifacts.
-- Artifact `alluxio-core-client-fs` provides
-  [Alluxio Java file system API](https://docs.alluxio.io/os/user/stable/en/api/FS-API.html#alluxio-java-api))
-  to access all Alluxio-specific functionalities.
-  This artifact is included in `alluxio-shaded-client`.
-- Artifact `alluxio-core-client-hdfs` provides
-  [HDFS-Compatible file system API](https://docs.alluxio.io/os/user/stable/en/api/FS-API.html#hadoop-compatible-java-client).
-  This artifact is included in `alluxio-shaded-client`.
+### Evaluate the accuracy of MRC generation
+1. switch the wss-estimation's branch to rarcm
+```cmd
+cd wss-estimation
+git switch rarcm
+```
+2. re-compile the wss-estimation
+```cmd
+mvn assembly:assembly \
+  -T 4C \
+  -Dmaven.javadoc.skip=true \
+  -DskipTests \
+  -Dlicense.skip=true \
+  -Dcheckstyle.skip=true \
+  -Dfindbugs.skip=true
+```
+3. run the scripts:
+```cmd
+bash ./benchmark_scripts/bench_rarcm_mrc.sh
+bash ./benchmark_scripts/bench_cuki_mrc.sh
+```
+4. wait for the exp, and run python files to get your figure:
+```cmd
+python3 ./plot/plot_mrc_accuracy.py
+```
 
-Here are examples to declare the dependecies on  `alluxio-shaded-client` using Maven:
-
-  ```xml
-  <dependency>
-    <groupId>org.alluxio</groupId>
-    <artifactId>alluxio-shaded-client</artifactId>
-    <version>2.6.0</version>
-  </dependency>
-  ```
-
-## Contributing
-
-Contributions via GitHub pull requests are gladly accepted from their original author. Along with
-any pull requests, please state that the contribution is your original work and that you license the
-work to the project under the project's open source license. Whether or not you state this
-explicitly, by submitting any copyrighted material via pull request, email, or other means you agree
-to license the material under the project's open source license and warrant that you have the legal
-authority to do so.
-For a more detailed step-by-step guide, please read
-[how to contribute to Alluxio](https://docs.alluxio.io/os/user/stable/en/contributor/Contributor-Getting-Started.html).
-For new contributor, please take two [new contributor tasks](https://github.com/Alluxio/new-contributor-tasks).
-
-For advanced feature requests and contributions, 
-Alluxio core team is hosting regular online meetings with community users and developers to iterate the project in two special interest groups:
-
-* Alluxio and AI workloads: e.g., running Tensorflow, Pytorch on Alluxio through the POSIX API. Checkout the [meeting notes](https://docs.google.com/spreadsheets/d/1OlprIiUkGjMuZJ_6cLTJYVJpTGpnTWkFhHzX16tYNDQ/)
-* Alluxio and Presto workloads: e.g., running Presto on Alluxio, running Alluxio catalog service. Checkout the [meeting notes](https://docs.google.com/spreadsheets/d/1V-fxqfG_oj3B1ZWSgbRWVuTHFvjL3pq6uXgAL-xvFQA/)
-
-Subscribe our [public calendar](https://calendar.google.com/calendar/embed?src=alluxio.com_g9ec8agk27baqu2nu692ft1m3s%40group.calendar.google.com&ctz=America%2FLos_Angeles) to join us.
-
-## Useful Links
-
-- [Alluxio Website](https://www.alluxio.io/)
-- [Downloads](https://www.alluxio.io/download)
-- [Releases and Notes](https://www.alluxio.io/download/releases/)
-- [Documentation](https://www.alluxio.io/docs/)

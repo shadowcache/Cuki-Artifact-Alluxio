@@ -526,6 +526,7 @@ main() {
     local)
       local master_hostname=$(${BIN}/alluxio getConf alluxio.master.hostname)
       local is_master_set_and_local=false
+      echo $master_hostname
       if [[ -n ${master_hostname} ]]; then
         local local_addresses=( "localhost" "127.0.0.1" $(hostname -s) $(hostname -f) )
         if [[ $(uname -a) != Darwin* ]]; then
